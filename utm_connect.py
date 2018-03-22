@@ -93,7 +93,7 @@ class ServerConnect():
             if tunnel_was_active:
                 self.connect()  # Подключаем ssh туннель вновь
 
-    def execute_parse_command(self, all_cdr, period=None):
+    def execute_parse_command(self, all_cdr):
 
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
