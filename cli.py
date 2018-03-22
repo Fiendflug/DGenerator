@@ -157,10 +157,10 @@ class CommandPrompt(cmd.Cmd):
                 cdr_worker = cdr.Cdr(self.per.get_period(), self.config)
                 cdr_worker.convert()
             elif argument[0] == 'trn' and self.connection.get_status() == 'YES':
-                cdr_worker = cdr.Cdr(self.per.get_period(), self.config)
+                cdr_worker = cdr.Cdr(self.per.get_period(), self.config, self.connection)
                 cdr_worker.transfer()
             elif argument[0] == 'prs' and self.connection.get_status() == 'YES':
-                cdr_worker = cdr.Cdr(self.per.get_period(), self.config)
+                cdr_worker = cdr.Cdr(self.per.get_period(), self.config, self.connection)
                 cdr_worker.parse()
             else:
                 print('Некорректные параметры или проблемы с подключением к серверу. '
@@ -231,6 +231,11 @@ class CommandPrompt(cmd.Cmd):
 
         if not args:
             pass
+            # cdr_worker = cdr.Cdr(self.per.get_period(), self.config, self.connection)
+            # cdr_worker.parse()
+            # self.connection.execute_parse_command([
+            #     '1_2018/comlog_01_01_2018.cdr'
+            # ])
         else:
             print('Некорректные параметры. Воспользутесь командой help log для получения помощи.')
 

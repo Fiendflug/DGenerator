@@ -18,6 +18,9 @@ class ServerConnect():
             self.database_host = self.config.get('DATABASE', 'DatabaseHost')
             self.status_code = 'NO'
             self.tunnel = None
+            self.parser = self.config.get('CDR', 'parserpath')
+            self.parser_config = self.config.get('CDR', 'parserconfigpath')
+            self.cdr_dif_for_parser = self.config.get('CDR', 'remotepath')
         except Exception as exc:
             print('ERROR: Ошибка конфигурации либо повреждены жизненно важные файлы приложения. '
                   'Дальнейшая работа невозможна Причина - %s. Проверьте журнал для получения информации.' % exc)
@@ -89,3 +92,35 @@ class ServerConnect():
             ssh_transport.close()
             if tunnel_was_active:
                 self.connect()  # Подключаем ssh туннель вновь
+
+    def execute_parse_command(self, all_cdr, period=None):
+
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(self.address, username=self.username, password=self.password, timeout=600)
+
+        for index, cdr in enumerate(all_cdr, start=1):
+            try:
+                channel = ssh.get_transport().open_session()
+                channel.settimeout(10800)
+                # command = '/netup/utm5/bin/utm5_send_cdr -c /netup/utm5/utm5_send_cdr.cfg -s /utm5/cdr/%s' % cdr
+                command = '%s -c %s -s %s%s' % (self.parser, self.parser_config, self.cdr_dif_for_parser, cdr)
+                channel.exec_command(command)
+
+            except Exception as exc:
+                print('ERROR: Ошибка во время инициализации сессии. Процесс парсинга невозможен. Причина - %s. '
+                      'Проверьте журнал для получения информации.' % exc)
+                break
+
+            if not channel.recv_exit_status() == 0:
+                print('ERROR: Ошибка во время работы парсера. Процесс парсинга завершился с кодом - %s. '
+                      'Проверьте журнал для получения информации.' % channel.recv_exit_status)
+                ssh.close()
+                break
+            else:
+                print('INFO: Парсер utm5_send_cdr на сервере успешно обработал Файл %s из %s (%s).' %
+                      (index, len(all_cdr), cdr))
+                channel.close()
+        ssh.close()
+
+
